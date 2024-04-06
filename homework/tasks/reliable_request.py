@@ -1,6 +1,9 @@
 import abc
 
 import httpx
+import asyncio
+
+MAX_TRIES = 10
 
 
 class ResultsObserver(abc.ABC):
@@ -21,9 +24,18 @@ async def do_reliable_request(url: str, observer: ResultsObserver) -> None:
 
     async with httpx.AsyncClient() as client:
         # YOUR CODE GOES HERE
-        response = await client.get(url)
-        response.raise_for_status()
-        data = response.read()
+        # количество ретраев
+        n_tries = 0
+
+        data = None
+        while (n_tries < MAX_TRIES) and (data is None):
+            try:
+                response = await client.get(url, timeout=10)
+                response.raise_for_status()
+                data = response.read()
+            except httpx.HTTPStatusError:
+                await asyncio.sleep(2**n_tries)
+                n_tries += 1
 
         observer.observe(data)
         return
