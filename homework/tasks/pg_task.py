@@ -39,6 +39,17 @@ class ItemStorage:
         # like https://github.com/pressly/goose
         # YOUR CODE GOES HERE
 
+        query = """
+            create table items
+            (
+                item_id integer PRIMARY KEY,
+                user_id integer NOT NULL,
+                title text NOT NULL,
+                description text NOT NULL
+            )
+        """
+        await self._pool.execute(query)
+
     async def save_items(self, items: list[ItemEntry]) -> None:
         """
         Напишите код для вставки записей в таблицу items одним запросом, цикл
@@ -48,6 +59,16 @@ class ItemStorage:
         # sql injections https://habr.com/ru/articles/148151/.
         # YOUR CODE GOES HERE
 
+        items = [
+            (item.item_id, item.user_id, item.title, item.description) for item in items
+        ]
+        await self._pool.executemany(
+            """
+            insert into items values ($1, $2, $3, $4);
+        """,
+            items,
+        )
+
     async def find_similar_items(
         self, user_id: int, title: str, description: str
     ) -> list[ItemEntry]:
@@ -55,3 +76,24 @@ class ItemStorage:
         Напишите код для поиска записей, имеющих указанные user_id, title и description.
         """
         # YOUR CODE GOES HERE
+        query = f"""
+            select
+                item_id,
+                user_id,
+                title,
+                description
+
+            from items
+
+            where user_id = {user_id}
+              and title = '{title}'
+              and description = '{description}'
+        """
+        data = await self._pool.fetch(query)
+        data = [
+            ItemEntry(
+                item_id=item_id, user_id=user_id, title=title, description=description
+            )
+            for (item_id, user_id, title, description) in data
+        ]
+        return data

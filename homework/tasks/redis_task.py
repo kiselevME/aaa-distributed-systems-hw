@@ -18,6 +18,7 @@ class UsersByTitleStorage:
         имеющих объявления с заданным заголовком.
         """
         # YOUR CODE GOES HERE
+        await self._client.sadd(title, user_id)
 
     async def find_users_by_title(self, title: str) -> list[int]:
         """
@@ -25,3 +26,9 @@ class UsersByTitleStorage:
         с заданным title.
         """
         # YOUR CODE GOES HERE
+        data = await self._client.smembers(title)
+        try:
+            data = [int(item.decode()) for item in list(data)]
+        except ValueError:
+            raise ValueError("Невозможно конвертировать user_id в integer")
+        return data
