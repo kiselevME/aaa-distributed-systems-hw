@@ -30,5 +30,5 @@ class UsersByTitleStorage:
         try:
             data = [int(item.decode()) for item in list(data)]
         except ValueError:
-            print("Невозможно конвертировать user_id в integer")
+            raise ValueError("Невозможно конвертировать user_id в integer")
         return data
